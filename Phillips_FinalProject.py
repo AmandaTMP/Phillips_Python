@@ -1,5 +1,7 @@
 import random
 
+MONEY_FILE = "money.txt"
+
 SUITS = ["Hearts", "Diamonds", "Clubs", "Spades"]
 RANKS = [
     ("Ace", 11),
@@ -22,11 +24,19 @@ def hand_value(hand):
         total += card[2]
     return total
 
+def read_money():
+    with open(MONEY_FILE, "r") as file:
+        return float(file.read().strip())
+    
+def write_money(money):
+    with open(MONEY_FILE, "w") as file:
+        file.write(str(money))
+
 def main():
     print("BLACKJACK!")
     print("Blackjack payout is 3:2\n")
 
-    money = 100.0
+    money = read_money()
 
     while True:
         print(f"Money: {money}")
@@ -67,6 +77,7 @@ def main():
         print("\nDEALER'S CARDS:")
         for card in dealer_hand:
             print(f"{card[0]} of {card[1]}")
+            
         print(f"\nYOUR POINTS: {player_points}")
         print(f"DEALER'S POINTS: {dealer_points}")
 
