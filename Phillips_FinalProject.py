@@ -1,6 +1,8 @@
 import random
 
 MONEY_FILE = "money.txt"
+MIN_BET = 5
+MAX_BET = 1000
 
 SUITS = ["Hearts", "Diamonds", "Clubs", "Spades"]
 RANKS = [
@@ -25,12 +27,35 @@ def hand_value(hand):
     return total
 
 def read_money():
-    with open(MONEY_FILE, "r") as file:
-        return float(file.read().strip())
+    try:
+        with open(MONEY_FILE, "r") as file:
+            text = file.read().strip()
+            if text == '':
+                return 100.0
+            return float(text)
+    except (FileNotFoundError, ValueError):
+        return 100.0
     
 def write_money(money):
     with open(MONEY_FILE, "w") as file:
-        file.write(str(money))
+        file.write(str(round(money, 2)))
+
+def get_bet(money):
+    while True:
+        try:
+            bet = float(input("Bet amount:  "))
+        except ValueError:
+            print("Bet must be a number.")
+            continue 
+
+        if bet < MIN_BET:
+            print(f"Minimum bet is {MIN_BET}.")
+        elif bet > MAX_BET:
+            print(f"Maximum bet is {MAX_BET}.")
+        elif bet > money:
+            print("Bet can't be greater than current money.")
+        else:
+            return bet 
 
 def main():
     print("BLACKJACK!")
@@ -40,7 +65,7 @@ def main():
 
     while True:
         print(f"Money: {money}")
-        bet = float(input("Bet amount: "))
+        bet = get_bet(money)
 
         deck = create_deck()
         dealer_hand = [deck.pop(), deck.pop()]
