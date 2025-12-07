@@ -21,9 +21,12 @@ def create_deck():
     return deck
 
 def hand_value(hand):
-    total = 0
-    for card in hand:
-        total += card[2]
+    total = sum(card[2] for card in hand)
+    aces = sum(1 for card in hand if card[0] == "Ace")
+
+    while total > 21 and aces > 0:
+        total -= 10
+        aces -= 1
     return total
 
 def read_money():
@@ -56,6 +59,13 @@ def get_bet(money):
             print("Bet can't be greater than current money.")
         else:
             return bet 
+        
+def show_hand(label, hand, hide_first = False):
+    print(f"\n{label}")
+    for i, card in enumerate(hand):
+        if hide_first and i == 1:
+            continue
+        print(f"{card[0]} of {card[1]}")
 
 def main():
     print("BLACKJACK!")
@@ -83,13 +93,13 @@ def main():
             choice = input("\nHit or stand? (hit/stand): ")
             if choice == "hit":
                 player_hand.append(deck.pop())
-                print("\nYOUR CARDS:")
-                for card in player_hand:
-                    print(f"{card[0]} of {card[1]}")
+                show_hand("YOUR CARDS:", player_hand)
                 if hand_value(player_hand) > 21:
                     break
-            else:
+            elif choice == "stand":
                 break
+            else:
+                print("Please enter 'hit' or 'stand'.")
 
         player_points = hand_value(player_hand)
         dealer_points = hand_value(dealer_hand)
@@ -99,10 +109,7 @@ def main():
                 dealer_hand.append(deck.pop())
                 dealer_points = hand_value(dealer_hand)
 
-        print("\nDEALER'S CARDS:")
-        for card in dealer_hand:
-            print(f"{card[0]} of {card[1]}")
-            
+        print("\nDEALER'S CARDS:", dealer_hand)
         print(f"\nYOUR POINTS: {player_points}")
         print(f"DEALER'S POINTS: {dealer_points}")
 
