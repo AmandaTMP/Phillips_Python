@@ -1,5 +1,4 @@
 import random
-
 import db
 
 MIN_BET = 5
@@ -24,7 +23,6 @@ def create_deck():
 def hand_value(hand):
     total = sum(card[2] for card in hand)
     aces = sum(1 for card in hand if card[0] == "Ace")
-
     while total > 21 and aces > 0:
         total -= 10
         aces -= 1
@@ -36,26 +34,40 @@ def is_blackjack(hand):
 def get_bet(money):
     while True:
         try:
-            bet = float(input("Bet amount:  "))
+            bet = float(input("Bet amount: "))
         except ValueError:
             print("Bet must be a number.")
-            continue 
+            continue
 
         if bet < MIN_BET:
             print(f"Minimum bet is {MIN_BET}.")
         elif bet > MAX_BET:
             print(f"Maximum bet is {MAX_BET}.")
         elif bet > money:
-            print("Bet can't be greater than current money.")
+            print("Bet can't be greater than your current money.")
         else:
-            return bet 
-        
-def show_hand(label, hand, hide_first = False):
+            return bet
+
+def show_hand(label, hand):
     print(f"\n{label}")
-    for i, card in enumerate(hand):
-        if hide_first and i == 1:
-            continue
+    for card in hand:
         print(f"{card[0]} of {card[1]}")
+
+def buy_chips(money):
+    print(f"Money: {money:.2f}")
+    choice = input("Your money is below the minimum bet. Buy more chips? (y/n): ")
+    if choice.lower() == "y":
+        while True:
+            try:
+                amount = float(input("Amount to add: "))
+                if amount <= 0:
+                    print("Amount must be greater than 0.")
+                else:
+                    money += amount
+                    break
+            except ValueError:
+                print("Amount must be a valid number.")
+    return money
 
 def main():
     print("BLACKJACK!")
@@ -65,9 +77,11 @@ def main():
 
     while True:
         if money < MIN_BET:
-            print(f"Money: {money:.2f}")
-            print("You don't have enough to bet.")
-            break
+            money = buy_chips(money)
+            db.write_money(money)
+            if money < MIN_BET:
+                print("You still don't have enough to play. Bye!")
+                break
 
         print(f"Money: {money:.2f}")
         bet = get_bet(money)
@@ -85,33 +99,28 @@ def main():
         player_blackjack = is_blackjack(player_hand)
         dealer_blackjack = is_blackjack(dealer_hand)
 
-        if player_blackjack or dealer_blackjack:
-            show_hand("DEALER'S CARDS:", dealer_hand)
-            player_points = hand_value(player_hand)
-            dealer_points = hand_value(dealer_hand)
-        else:
+        if not player_blackjack and not dealer_blackjack:
             while True:
                 choice = input("\nHit or stand? (hit/stand): ")
-                if choice == "hit":
+                if choice.lower() == "hit":
                     player_hand.append(deck.pop())
                     show_hand("YOUR CARDS:", player_hand)
                     if hand_value(player_hand) > 21:
                         break
-                elif choice == "stand":
+                elif choice.lower() == "stand":
                     break
                 else:
                     print("Please enter 'hit' or 'stand'.")
 
-            player_points = hand_value(player_hand)
-            dealer_points = hand_value(dealer_hand)
+        player_points = hand_value(player_hand)
+        dealer_points = hand_value(dealer_hand)
 
-            if player_points <= 21:
-                while dealer_points < 17:
-                    dealer_hand.append(deck.pop())
-                    dealer_points = hand_value(dealer_hand)
+        if player_points <= 21 and not dealer_blackjack:
+            while dealer_points < 17:
+                dealer_hand.append(deck.pop())
+                dealer_points = hand_value(dealer_hand)
 
-            show_hand("DEALER'S CARDS:", dealer_hand)
-
+        show_hand("DEALER'S CARDS:", dealer_hand)
         print(f"\nYOUR POINTS: {player_points}")
         print(f"DEALER'S POINTS: {dealer_points}")
 
@@ -123,22 +132,26 @@ def main():
             print("Dealer has blackjack. You lose.")
             money -= bet
         elif player_points > 21:
-            print("Sorry. You lose.")
+            print("You bust. You lose.")
             money -= bet
-        elif dealer_points > 21 or player_points > dealer_points:
+        elif dealer_points > 21:
+            print("Dealer busts. You win!")
+            money += bet
+        elif player_points > dealer_points:
             print("You win!")
             money += bet
-        elif player_points == dealer_points:
-            print("Push.")
-        else:
+        elif player_points < dealer_points:
             print("Dealer wins.")
             money -= bet
+        else:
+            print("Push.")
 
         db.write_money(money)
         print(f"Money: {money:.2f}\n")
 
         again = input("Play again? (y/n): ")
         if again.lower() != "y":
+            print("Come back soon!")
             break
 
     print("Bye!")

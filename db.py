@@ -3,8 +3,9 @@ MONEY_FILE = "money.txt"
 def read_money():
     try:
         with open(MONEY_FILE, "r") as file:
-            return float(file.read().strip())
-    except FileNotFoundError:
+            text = file.read().strip()
+            return float(text)
+    except (FileNotFoundError, ValueError):
         return 100.0
     
 def write_money(money):
